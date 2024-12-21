@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sube tu Protocolo de Inspección</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 600px;
+        }
+        .download-link {
+            display: none;
+            background-color: #28a745;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+            margin-top: 20px;
+            position: relative;
+            animation: slideDown 0.5s forwards;
+        }
+        @keyframes slideDown {
+            from {
+                top: -50px;
+                opacity: 0;
+            }
+            to {
+                top: 0;
+                opacity: 1;
+            }
+        }
+        #feedback-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 120px;
+            height: 120px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        #feedback-form {
+            position: fixed;
+            right: -300px;
+            top: 0;
+            height: 100%;
+            width: 300px;
+            background-color: white;
+            box-shadow: -2px 0 6px rgba(0,0,0,0.2);
+            padding: 20px;
+            transition: right 0.4s ease;
+            z-index: 1000;
+        }
+        #feedback-form h5 {
+            margin-bottom: 20px;
+        }
+        #close-feedback {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #000;
+        }
+        .feedback-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 900;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="text-center mb-4">Sube tu Protocolo de Inspección</h2>
+    <form id="uploadForm" enctype="multipart/form-data" class="border p-4 bg-white shadow-sm rounded">
+        <div class="mb-3">
+            <label for="file" class="form-label">Archivo PDF</label>
+            <input class="form-control" type="file" id="file" name="file" accept=".pdf" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Subir Protocolo</button>
+    </form>
+
+    <div id="loading" class="text-center mt-4" style="display: none;">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p>Procesando el archivo, por favor espera...</p>
+    </div>
+
+    <div id="download" class="download-link">
+        <a id="downloadLink" href="#" class="text-white">Descarga tu PDF procesado</a>
+    </div>
+</div>
+
+<div id="feedback-button">Feedback</div>
+
+<div class="feedback-overlay"></div>
+
+<div id="feedback-form">
+    <button id="close-feedback">&times;</button>
+    <h5>Reportar un problema</h5>
+    <form id="reportForm">
+        <div class="mb-3">
+            <label for="feedback" class="form-label">Descripción del problema</label>
+            <textarea class="form-control" id="feedback" name="feedback" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Enviar</button>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function() {
+        let uuid = null;
+
+        $('#uploadForm').submit(function(e) {
+            e.preventDefault();
+            $('#loading').show();
+
+            var formData = new FormData(this);
+            $.ajax({
+                url: '/upload',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    uuid = response.uuid;
+                    pollForOutput();
+                },
+                error: function() {
+                    alert('Error al subir el archivo.');
+                    $('#loading').hide();
+                }
+            });
+        });
+
+        function pollForOutput() {
+            var interval = setInterval(function() {
+                $.ajax({
+                    url: '/check-output',
+                    type: 'GET',
+                    data: { uuid: uuid },
+                    success: function(data) {
+                        if (data.fileExists) {
+                            clearInterval(interval);
+                            $('#loading').hide();
+                            $('#downloadLink').attr('href', '/download?uuid=' + uuid);
+                            $('#download').slideDown();
+                        }
+                    }
+                });
+            }, 2000); // Poll every 2 seconds
+        }
+
+        // Feedback Button Slide
+        $('#feedback-button').click(function() {
+            $('#feedback-form').css('right', '0');
+            $('.feedback-overlay').show();
+        });
+
+        // Close Feedback Form
+        $('#close-feedback, .feedback-overlay').click(function() {
+            $('#feedback-form').css('right', '-300px');
+            $('.feedback-overlay').hide();
+        });
+
+        // Submit feedback
+        $('#reportForm').submit(function(e) {
+            e.preventDefault();
+            $.ajax({
+                url: '/report',
+                type: 'POST',
+                data: { uuid: uuid, feedback: $('#feedback').val() },
+                success: function() {
+                    alert('Gracias por tu comentario.');
+                    $('#feedback-form').css('right', '-300px');
+                    $('.feedback-overlay').hide();
+                },
+                error: function() {
+                    alert('Error al enviar el reporte.');
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

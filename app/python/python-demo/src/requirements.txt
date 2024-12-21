@@ -1,0 +1,14 @@
+iilib==0.1.1
+Flask-SQLAlchemy
+sqlalchemy
+PyPDF2
+pdfminer.six
+openai==0.28
+requests
+watchdog
+psycopg2-binary
+reportlab
+prometheus-flask-exporter
+prometheus_client
+pytest
+Werkzeug

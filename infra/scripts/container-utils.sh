@@ -24,7 +24,7 @@ ensure_python_app_base_container() {
 
 build_python_app_container() {
     ensure_python_app_base_container
-    cd ./app/python/python_demo || exit 1
+    cd ./app/python/python-demo || exit 1
     message "building python app container" 0 6
     sudo -u"$LOCAL_USER" docker rmi -f registry.kreuzung1.de/intelligent-intern/python-app:latest
     # sudo -u"$LOCAL_USER" docker build --no-cache --progress=plain -t registry.kreuzung1.de/intelligent-intern/python-app:latest .
