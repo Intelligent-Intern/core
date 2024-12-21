@@ -1,0 +1,105 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.18'
+
+      - name: Install Pulumi
+        run: curl -fsSL https://get.pulumi.com | sh
+        shell: bash
+
+      - name: Add Pulumi to PATH
+        run: echo "$HOME/.pulumi/bin" >> $GITHUB_PATH
+
+      - name: Install Dependencies
+        run: go mod download
+
+      - name: Set Pulumi Config
+        run: |
+          pulumi config set hcloud:token "${{ secrets.HCLOUD_TOKEN }}" --secret
+          pulumi config set sshPublicKey "${{ secrets.SSH_PUBLIC_KEY }}"
+          pulumi config set customImage "${{ secrets.CUSTOM_IMAGE }}"
+          pulumi config set dnsApiToken "${{ secrets.DNS_API_TOKEN }}" --secret
+
+      - name: Pulumi Preview
+        run: pulumi preview --stack dev
+
+      - name: Pulumi Up
+        run: pulumi up --yes --stack dev
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r app/python/rojo/requirements.txt
+          pip install black flake8 pytest
+
+      - name: Run flake8
+        run: flake8 app/python/rojo/src/ app/python/rojo/tests/ | tee flake8-output.log
+
+      - name: Run black
+        run: black --check app/python/rojo/src/ app/python/rojo/tests/ | tee black-output.log
+
+      - name: Run tests
+        run: pytest app/python/rojo/tests/ | tee pytest-output.log
+
+      - name: Push logs to Loki
+        env:
+          LOKI_URL: ${{ secrets.LOKI_URL }}
+          LOKI_USER: ${{ secrets.LOKI_USER }}
+          LOKI_PASS: ${{ secrets.LOKI_PASS }}
+        run: |
+          TIMESTAMP=$(date +%s%N)
+          LOG_FILE=flake8-output.log
+          BLACK_LOG_FILE=black-output.log
+          TEST_LOG_FILE=pytest-output.log
+
+          ENCODED_FLAKE8=$(python -c "import urllib.parse, sys; print(urllib.parse.quote(open('$LOG_FILE').read()))")
+          ENCODED_BLACK=$(python -c "import urllib.parse, sys; print(urllib.parse.quote(open('$BLACK_LOG_FILE').read()))")
+          ENCODED_PYTEST=$(python -c "import urllib.parse, sys; print(urllib.parse.quote(open('$TEST_LOG_FILE').read()))")
+
+          if grep -q "ERROR" $LOG_FILE || grep -q "ERROR" $BLACK_LOG_FILE || grep -q "FAILED" $TEST_LOG_FILE; then
+            CI_STATUS="ERROR: CI job encountered issues"
+          else
+            CI_STATUS="INFO: CI job completed successfully"
+          fi
+
+          curl -u "$LOKI_USER:$LOKI_PASS" -X POST "$LOKI_URL/loki/api/v1/push" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "streams": [
+              {
+                "stream": { "job": "rojo-ci", "level": "INFO" },
+                "values": [
+                  ["'"$TIMESTAMP"'", "'"$CI_STATUS"'"]
+                ]
+              },
+              {
+                "stream": { "job": "rojo-ci", "level": "ERROR" },
+                "values": [
+                  ["'"$TIMESTAMP"'", "'"$ENCODED_FLAKE8 $ENCODED_BLACK $ENCODED_PYTEST"'"]
+                ]
+              }
+            ]
+          }'
