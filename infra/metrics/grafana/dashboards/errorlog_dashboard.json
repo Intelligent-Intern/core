@@ -1,0 +1,84 @@
+{
+  "id": null,
+  "title": "MinIO Logs Overview",
+  "tags": ["minio", "logs", "loki"],
+  "timezone": "browser",
+  "schemaVersion": 30,
+  "version": 1,
+  "refresh": "5s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Log Overview",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 4 },
+      "targets": [
+        {
+          "expr": "count_over_time({job=~\"minio_.*\"}[1m])",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["sum"] },
+        "orientation": "horizontal",
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "none" },
+        "overrides": []
+      }
+    },
+    {
+      "type": "barchart",
+      "title": "Log Distribution",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum by (level) (count_over_time({job=~\"minio_.*\"}[1m]))",
+          "legendFormat": "{{level}}",
+          "refId": "B"
+        }
+      ],
+      "options": { "stacked": true },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      }
+    },
+    {
+      "type": "table",
+      "title": "Recent Logs",
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 10 },
+      "targets": [
+        {
+          "expr": "{job=~\"minio_.*\"}",
+          "refId": "C"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "columns": [
+          { "text": "Time", "value": "ts" },
+          { "text": "Message", "value": "line" }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "type": "query",
+        "datasource": "Loki",
+        "query": "label_values(job)",
+        "includeAll": true,
+        "refresh": 1,
+        "label": "Job"
+      }
+    ]
+  }
+}

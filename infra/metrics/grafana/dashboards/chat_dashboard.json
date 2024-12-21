@@ -1,0 +1,35 @@
+{
+  "id": null,
+  "uid": "chat-metrics",
+  "title": "Chat Metrics and Content",
+  "schemaVersion": 36,
+  "version": 0,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "table",
+      "title": "Chat Messages",
+      "datasource": {
+        "type": "JSON",
+        "uid": "json-api"
+      },
+      "targets": [
+        {
+          "type": "json",
+          "url": "http://<your-service-container>:5000/chats",
+          "transform": "json",
+          "root_path": "$.data",
+          "columns": [
+            {"text": "Role", "value_path": "role"},
+            {"text": "Content", "value_path": "content"}
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        }
+      }
+    }
+  ]
+}

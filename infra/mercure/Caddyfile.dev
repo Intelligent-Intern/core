@@ -1,0 +1,29 @@
+{
+    debug
+    auto_https off
+}
+
+:8086 {
+    encode zstd gzip
+
+    route {
+        mercure {
+            # Transport to use (default to Bolt)
+            transport_url bolt:///data/mercure.db
+            # Publisher JWT key
+            publisher_jwt !ChangeMePublisher!
+            # Subscriber JWT key
+            subscriber_jwt !ChangeMeSubscriber!
+            # Allow anonymous subscribers (double-check that it's what you want)
+            anonymous
+            # Enable the UI and subscriptions
+            ui
+            subscriptions
+            # CORS headers
+            cors_origins https://app.local https://mercure.local
+        }
+
+        respond /healthz 200
+    }
+}
+

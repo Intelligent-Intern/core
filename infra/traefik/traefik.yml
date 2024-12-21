@@ -1,0 +1,35 @@
+api:
+  dashboard: true
+  insecure: true
+
+# Logging
+log:
+  level: DEBUG
+
+# EntryPoints
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+    http:
+      tls: {}
+  neo4j_http:
+    address: ":7474"
+  neo4j_bolt:
+    address: ":7687"
+
+# Enable Docker Provider
+providers:
+  docker:
+    watch: true
+    exposedByDefault: false
+    endpoint: "unix:///var/run/docker.sock"
+  file:
+    directory: /etc/traefik/configuration
+    watch: true
