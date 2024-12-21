@@ -8,6 +8,7 @@ venv
 response.json
 var/
 
+app/php/symfony/.env
 app/php/symfony/.env.local
 app/php/symfony/.env.local.php
 app/php/symfony/.env.*.local
