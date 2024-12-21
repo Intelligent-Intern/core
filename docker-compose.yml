@@ -1,0 +1,625 @@
+services:
+
+  traefik:
+    container_name: traefik
+    hostname: traefik
+    image: traefik:v3.2.2
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.100
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+      - target: 8080
+        published: 8080
+        mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./infra/traefik/traefik.yml:/etc/traefik/traefik.yml
+      - ./infra/traefik/configuration:/etc/traefik/configuration
+      - ./var/traefik/certificates/local-cert.pem:/etc/traefik/certs/local-cert.crt
+      - ./var/traefik/certificates/local-key.pem:/etc/traefik/certs/local-key.key
+      - ~/.local/share/mkcert/rootCA.pem:/etc/ssl/certs/ca-certificates.crt
+    profiles:
+      - infra
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.local`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+
+  python_demo:
+    container_name: python_demo
+    hostname: python_demo
+    image: registry.kreuzung1.de/intelligent-intern/python-app:latest
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.101
+    env_file:
+      - ./config/.env.vault
+      - .env.local
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - FLASK_APP=app.py
+    ports:
+      - "5020:5000"
+    volumes:
+      - type: bind
+        source: ./app/python/python_demo/src
+        target: /app
+      - type: bind
+        source: ./app/python/python_demo/tests
+        target: /tests
+      - type: bind
+        source: ./var/python_demo
+        target: /var
+    profiles:
+      - python_demo
+    init: true
+    command: ["/entrypoint/entrypoint.sh"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`python-demo.local`)"
+      - "traefik.http.services.app.loadbalancer.server.port=5000"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls=true"
+
+  symfony:
+    container_name: symfony
+    hostname: symfony
+    image: registry.kreuzung1.de/intelligent-intern/symfony:latest
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.102
+    env_file:
+      - .env.local
+    environment:
+      - APACHE_PID_FILE=/var/run/apache2/apache2.pid
+      - VAULT_URL=${VAULT_ADDR}
+      - VAULT_ROLE_ID=${VAULT_ROLE_ID}
+      - VAULT_SECRET_ID=${VAULT_SECRET_ID}
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./infra/apache/conf/php.ini:/etc/php/8.3/apache2/php.ini
+      - ./infra/apache/conf/sites-available/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - type: bind
+        source: ./app/php/symfony
+        target: /var/www/html
+    profiles:
+      - symfony
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.symfony.rule=Host(`symfony.local`)"
+      - "traefik.http.routers.symfony.entrypoints=websecure"
+      - "traefik.http.routers.symfony.tls=true"
+      - "traefik.http.services.symfony.loadbalancer.server.port=8081"
+
+  neo4j:
+    image: neo4j:5
+    container_name: neo4j
+    restart: always
+    environment:
+      - NEO4J_AUTH=neo4j/SecurePass123
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - server.default_listen_address=0.0.0.0
+      - server.default_advertised_address=localhost
+      - server.bolt.listen_address=0.0.0.0
+      - server.bolt.advertised_address=localhost
+      - server.http.listen_address=0.0.0.0
+      - server.http.advertised_address=localhost
+      - server.security.auth_rate_limit.enabled=false
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ./var/neo4j/data:/data
+      - ./var/neo4j/logs:/logs
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.103
+    profiles:
+      - neo4j
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.neo4j.rule=Host(`neo4j.local`)"
+      - "traefik.http.services.neo4j.loadbalancer.server.port=7474"
+      - "traefik.http.routers.neo4j.entrypoints=neo4j_http"
+      - "traefik.http.routers.neo4j.tls.certresolver=local"
+      - "traefik.tcp.routers.neo4j-bolt.rule=HostSNI(`neo4j-bolt.local`)"
+      - "traefik.tcp.routers.neo4j-bolt.entrypoints=neo4j_bolt"
+      - "traefik.tcp.routers.neo4j-bolt.tls.certresolver=local"
+      - "traefik.tcp.services.neo4j-bolt.loadbalancer.server.port=7687"
+
+  db:
+    container_name: db
+    hostname: db
+    image: timescale/timescaledb:latest-pg14
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.104
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env.local
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - ALLOW_IP_RANGE=0.0.0.0/0
+      - POSTGRES_PASSWORD_METHOD=trust
+    volumes:
+      - ./var/postgres/data:/var/lib/postgresql/data
+      - ./infra/db/postgres/install_postgis.sh:/docker-entrypoint-initdb.d/install_postgis.sh
+      - ./infra/db/postgres/init_timescaledb.sql:/docker-entrypoint-initdb.d/init_timescaledb.sql
+    profiles:
+      - postgres
+    init: true
+
+  pgadmin:
+    container_name: pgadmin
+    hostname: pgadmin
+    image: dpage/pgadmin4:latest
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.105
+    env_file:
+      - .env.local
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    volumes:
+      - ./infra/db/pgadmin/servers.json:/pgadmin4/servers.json
+      - ./infra/db/pgadmin/pgpass:/pgpass
+    profiles:
+      - db-tools
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgadmin.rule=Host(`pgadmin.local`)"
+      - "traefik.http.routers.pgadmin.entrypoints=websecure"
+      - "traefik.http.routers.pgadmin.tls=true"
+      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+
+  postgres_exporter:
+    container_name: postgres_exporter
+    hostname: postgres_exporter
+    image: bitnami/postgres-exporter:latest
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.106
+    env_file:
+      - .env.local
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    volumes:
+      - ./infra/metrics/prometheus/postgres_exporter.yml:/etc/postgres_exporter/postgres_exporter.yml
+      - ./infra/metrics/prometheus/queries.yaml:/etc/postgres_exporter/queries.yaml
+    command:
+      - --config.file=/etc/postgres_exporter/postgres_exporter.yml
+      - --extend.query-path=/etc/postgres_exporter/queries.yaml
+    profiles:
+      - metric-aggregator
+    init: true
+
+  prometheus:
+    container_name: prometheus
+    hostname: prometheus
+    image: prom/prometheus
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.107
+    volumes:
+      - ./infra/metrics/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    profiles:
+      - monitoring-system
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.local`)"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+      - "traefik.http.routers.prometheus.entrypoints=websecure"
+      - "traefik.http.routers.prometheus.tls=true"
+
+  minio:
+    container_name: minio
+    hostname: minio
+    image: minio/minio:latest
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.108
+    env_file:
+      - .env.local
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_STORAGE_CLASS_STANDARD=${MINIO_STORAGE_CLASS_STANDARD}
+      - MINIO_NOTIFY_AMQP_ENABLE=${MINIO_NOTIFY_AMQP_ENABLE}
+      - MINIO_NOTIFY_AMQP_URL=${MINIO_NOTIFY_AMQP_URL}
+      - MINIO_NOTIFY_AMQP_EXCHANGE=${MINIO_NOTIFY_AMQP_EXCHANGE}
+      - MINIO_NOTIFY_AMQP_EXCHANGE_TYPE=${MINIO_NOTIFY_AMQP_EXCHANGE_TYPE}
+      - MINIO_NOTIFY_AMQP_ROUTING_KEY=${MINIO_NOTIFY_AMQP_ROUTING_KEY}
+      - MINIO_NOTIFY_AMQP_MANDATORY=${MINIO_NOTIFY_AMQP_MANDATORY}
+      - MINIO_NOTIFY_AMQP_IMMEDIATE=${MINIO_NOTIFY_AMQP_IMMEDIATE}
+      - MINIO_NOTIFY_AMQP_DURABLE=${MINIO_NOTIFY_AMQP_DURABLE}
+      - MINIO_NOTIFY_AMQP_AUTO_DELETED=${MINIO_NOTIFY_AMQP_AUTO_DELETED}
+    ports:
+      - "9010:9000"
+      - "9011:9001"
+    volumes:
+      - ./var/minio/data:/data
+    command: server /data --console-address ":9001" --address ":9000"
+    profiles:
+      - storage
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.myminio.tls=true"
+      - "traefik.http.routers.myminio.entrypoints=websecure"
+      - "traefik.http.routers.myminio.rule=Host(`s3.local`)"
+      - "traefik.http.routers.myminio.service=myminio"
+      - "traefik.http.services.myminio.loadbalancer.server.port=9000"
+      - "traefik.http.routers.minioapi.tls=true"
+      - "traefik.http.routers.minioapi.entrypoints=websecure"
+      - "traefik.http.routers.minioapi.rule=Host(`minio.local`)"
+      - "traefik.http.routers.minioapi.service=minioapi"
+      - "traefik.http.services.minioapi.loadbalancer.server.port=9001"
+
+  rabbitmq:
+    container_name: rabbitmq
+    hostname: rabbitmq
+    image: rabbitmq:3-management
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.109
+    env_file:
+      - .env.local
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_DEFAULT_VHOST="/"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./var/rabbitmq/data:/var/lib/rabbitmq
+      - ./var/rabbitmq/log/:/var/log/rabbitmq
+    profiles:
+      - messaging
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.local`)"
+      - "traefik.http.services.rabbitmq.loadbalancer.server.port=15672"
+      - "traefik.http.routers.rabbitmq.entrypoints=websecure"
+      - "traefik.http.routers.rabbitmq.tls=true"
+
+  loki:
+    container_name: loki
+    hostname: loki
+    image: grafana/loki:2.9.4
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.111
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./infra/metrics/loki/config/loki-config.yaml:/etc/loki/loki-config.yaml
+    profiles:
+      - log-database
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.loki.rule=Host(`loki.local`)"
+      - "traefik.http.services.loki.loadbalancer.server.port=3100"
+      - "traefik.http.routers.loki.entrypoints=websecure"
+      - "traefik.http.routers.loki.tls=true"
+
+  grafana:
+    container_name: grafana
+    hostname: grafana
+    image: grafana/grafana:latest
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.112
+    env_file:
+      - .env.local
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_PATHS_PROVISIONING=${GF_SECURITY_ADMIN_USER}
+      - GF_AUTH_ANONYMOUS_ENABLED=${GF_SECURITY_ADMIN_USER}
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=${GF_SECURITY_ADMIN_USER}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./infra/metrics/grafana/dashboards:/var/lib/grafana/dashboards:rw
+      - ./infra/metrics/grafana/provisioning:/etc/grafana/provisioning:rw
+    profiles:
+      - data-visualisation
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.local`)"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+
+  redis:
+    container_name: redis
+    hostname: redis
+    image: redis:6.0.9
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.113
+    env_file:
+      - .env.local
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./var/redis/data:/data
+    profiles:
+      - cache
+    init: true
+
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: ghcr.io/joeferner/redis-commander:latest
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.114
+    env_file:
+      - .env.local
+    environment:
+      - REDIS_HOSTS=${REDIS_HOST}
+    ports:
+      - "5060:8081"
+    profiles:
+      - cache-ui
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.redis-commander.rule=Host(`redis-commander.local`)"
+      - "traefik.http.routers.redis-commander.entrypoints=websecure"
+      - "traefik.http.routers.redis-commander.tls=true"
+      - "traefik.http.services.redis-commander.loadbalancer.server.port=8081"
+
+  mercure:
+    container_name: mercure
+    hostname: mercure
+    image: dunglas/mercure
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.115
+    env_file:
+      - .env.local
+    environment:
+      SERVER_NAME: ':8086'
+      JWT_KEY: ${MERCURE_JWT_KEY}
+      MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY}
+      ALLOW_ANONYMOUS: '1'
+      CORS_ALLOWED_ORIGINS: ${MERCURE_CORS_ALLOWED_ORIGINS}
+      PUBLISH_ALLOWED_ORIGINS: '*'
+      DEBUG: 1
+      MERCURE_EXTRA_DIRECTIVES: |
+        cors_origins ${MERCURE_CORS_ALLOWED_ORIGINS}
+        ui: true
+        subscriptions: true
+    ports:
+      - '8086:8086'
+    profiles:
+      - mercure
+    init: true
+    volumes:
+      - ./var/mercure/caddy/data:/data
+      - ./infra/mercure/caddy/config:/config
+      - ./infra/mercure/Caddyfile.dev:/etc/caddy/Caddyfile.dev
+    command: /usr/bin/caddy run --config /etc/caddy/Caddyfile.dev --adapter caddyfile
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mercure.rule=Host(`mercure.local`)"
+      - "traefik.http.services.mercure.loadbalancer.server.port=8086"
+      - "traefik.http.routers.mercure.entrypoints=websecure"
+      - "traefik.http.routers.mercure.tls=true"
+
+  vault:
+    container_name: vault
+    hostname: vault
+    image: vault:1.13.3
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.116
+    env_file:
+      - .env.local
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_DEV_ROOT_TOKEN_ID}
+      - VAULT_LOCAL_CONFIG=${VAULT_LOCAL_CONFIG:-"{}"}
+    ports:
+      - "8300:8300"
+    volumes:
+      - ./infra/vault/config:/vault/config
+      - ./var/vault/log:/var/log/vault
+      - ./infra/vault/scripts/wrapper.sh:/vault/wrapper.sh
+    cap_add:
+      - IPC_LOCK
+      - NET_ADMIN
+      - NET_RAW
+    entrypoint:
+      - /vault/wrapper.sh
+    profiles:
+      - vault
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vault.rule=Host(`vault.local`)"
+      - "traefik.http.routers.vault.entrypoints=websecure"
+      - "traefik.http.routers.vault.tls=true"
+      - "traefik.http.services.vault.loadbalancer.server.port=8300"
+
+  n8n:
+    container_name: n8n
+    hostname: n8n
+    image: n8nio/n8n
+    restart: unless-stopped
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.117
+    env_file:
+      - .env.local
+    environment:
+      - DB_TYPE=${N8N_DB_TYPE}
+      - DB_POSTGRESDB_HOST=${N8N_DB_HOST}
+      - DB_POSTGRESDB_PORT=${N8N_DB_PORT}
+      - DB_POSTGRESDB_DATABASE=${N8N_DB_NAME}
+      - DB_POSTGRESDB_USER=${N8N_DB_USER}
+      - DB_POSTGRESDB_PASSWORD=${N8N_DB_PASSWORD}
+      - N8N_RABBITMQ_HOST=${N8N_RABBITMQ_HOST}
+      - N8N_RABBITMQ_USER=${N8N_RABBITMQ_USER}
+      - N8N_RABBITMQ_PASSWORD=${N8N_RABBITMQ_PASSWORD}
+      - N8N_RABBITMQ_VHOST=${N8N_RABBITMQ_VHOST}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_USE_SSL=${MINIO_USE_SSL}
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./var/n8n/data:/home/node/.n8n
+      - ~/.local/share/mkcert/rootCA.pem:/usr/local/share/ca-certificates/rootCA.pem
+    profiles:
+      - n8n
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.local`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls=true"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+
+  mailcatcher:
+    container_name: mailcatcher
+    hostname: mailcatcher
+    image: schickling/mailcatcher:latest
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.118
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+    profiles:
+      - mail-ui
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mailcatcher.rule=Host(`mailcatcher.local`)"
+      - "traefik.http.routers.mailcatcher.entrypoints=websecure"
+      - "traefik.http.routers.mailcatcher.tls=true"
+      - "traefik.http.services.mailcatcher.loadbalancer.server.port=1080"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.6
+    container_name: keycloak
+    restart: always
+    ports:
+      - "8085:8080"
+    volumes:
+      - ./var/keycloak/data:/opt/keycloak/data
+    environment:
+      PROXY_ADDRESS_FORWARDING: 'true'
+      KC_DB_URL_HOST: ${KEYCLOAK_DB_HOST}
+      KEYCLOAK_DB_PORT: ${KEYCLOAK_DB_PORT}
+      KC_DB_URL_DATABASE: keycloak
+      KEYCLOAK_DB_NAME: ${KEYCLOAK_DB_NAME}
+      KEYCLOAK_DB_USER: ${KEYCLOAK_DB_USER}
+      KC_DB_SCHEMA: ${KEYCLOAK_DB_SCHEMA}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME_STRICT: 'false'
+      KC_HTTP_ENABLED: 'true'
+      KC_PROXY: 'edge'
+      KC_LOG_LEVEL: INFO
+    entrypoint: ["/opt/keycloak/bin/kc.sh", "start"]
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.119
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`keycloak.local`)"
+      - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.routers.keycloak.tls=true"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+
+volumes:
+  app:
+    driver: local
+  db:
+    driver: local
+  pgadmin:
+    driver: local
+  postgres_exporter:
+    driver: local
+  prometheus:
+    driver: local
+  minio:
+    driver: local
+  rabbitmq:
+    driver: local
+  fluentd:
+    driver: local
+  loki:
+    driver: local
+  grafana:
+    driver: local
+  redis:
+    driver: local
+  mercure:
+    driver: local
+  vault:
+    driver: local
+  n8n:
+    driver: local
+  mailcatcher:
+    driver: local
+  keycloak:
+    driver: local
+
+networks:
+  fullstack:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.30.10.0/24
