@@ -158,10 +158,11 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - ALLOW_IP_RANGE=0.0.0.0/0
       - POSTGRES_PASSWORD_METHOD=trust
+      - POSTGRES_SHARED_PRELOAD_LIBRARIES=timescaledb
     volumes:
       - ./var/postgres/data:/var/lib/postgresql/data
-      - ./infra/db/postgres/install_postgis.sh:/docker-entrypoint-initdb.d/install_postgis.sh
-      - ./infra/db/postgres/init_timescaledb.sql:/docker-entrypoint-initdb.d/init_timescaledb.sql
+      - ./infra/db/postgres/2_install_postgis.sh:/docker-entrypoint-initdb.d/2_install_postgis.sh
+      - ./infra/db/postgres/1_init_timescaledb.sql:/docker-entrypoint-initdb.d/1_init_timescaledb.sql
     profiles:
       - postgres
     init: true
@@ -572,6 +573,8 @@ services:
       KC_HTTP_ENABLED: 'true'
       KC_PROXY: 'edge'
       KC_LOG_LEVEL: INFO
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
     entrypoint: ["/opt/keycloak/bin/kc.sh", "start"]
     networks:
       fullstack:
