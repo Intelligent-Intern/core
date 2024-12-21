@@ -1,0 +1,17 @@
+
+.idea
+__pycache__
+config/.env*
+app/python/core
+venv
+.env.local
+response.json
+
+
+app/php/symfony/.env.local
+app/php/symfony/.env.local.php
+app/php/symfony/.env.*.local
+app/php/symfony/config/secrets/prod/prod.decrypt.private.php
+app/php/symfony/public/bundles/
+app/php/symfony/var/
+app/php/symfony/vendor/
