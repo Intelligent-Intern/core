@@ -37,6 +37,8 @@ install_docker_and_compose() {
         fi
     else
         echo "Docker is already installed."
+        mkdir -p var/preferences
+        echo "# This file prevents the Docker installation from being repeated." > "$DOCKER_PREFS_FILE"
     fi
     echo "Checking for Docker Compose installation..."
     if ! docker compose version &> /dev/null; then
