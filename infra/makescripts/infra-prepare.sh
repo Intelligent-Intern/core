@@ -57,7 +57,10 @@ main() {
     "./var/vault/log" \
     "./var/neo4j/data" \
     "./var/postgres/data" \
-    "./var/neo4j/logs"
+    "./var/neo4j/logs" \
+    "./var/python-demo" \
+    "./infra/keycloak"
+
   init_system
   # while we are developing the build script we always delete this... normally the build script is only run once anyways
   # after that we should use the make up command
@@ -122,6 +125,14 @@ main() {
   chown "$LOCAL_USER":"$LOCAL_GROUP" -R "$DOCKER_PREFS_FILE"
   chown "$LOCAL_USER":"$LOCAL_GROUP" -R ./config
   chown "$LOCAL_USER":"$LOCAL_GROUP" -R .env.local
+  echo "APP_ENV=dev" > ./app/php/symfony/.env
+  # shellcheck disable=SC2129
+  echo "VAULT_URL=$VAULT_URL" >> ./app/php/symfony/.env
+  echo "VAULT_ROLE_ID=$VAULT_ROLE_ID" >> ./app/php/symfony/.env
+  echo "VAULT_SECRET_ID=$VAULT_SECRET_ID" >> ./app/php/symfony/.env
+  chmod 777 ./app/php/symfony/var -R
+  cd ./app/php/symfony/ && ./bin/composer install
+  cd ../../../
   for i in {5..0}; do
       echo -ne "Waiting for the application to be ready in $i seconds.\r"
       sleep 1
