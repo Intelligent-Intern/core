@@ -23,9 +23,7 @@ sudo apt update && sudo apt install -y make
 
 ---
 
-## Overview
 
-![infra.png](../../documentation/infra.png)
 
 ```mermaid
 %%{init: {"theme": "dark", "themeVariables": {"primaryColor": "#ffcc00", "primaryTextColor": "#000000"}}}%%
