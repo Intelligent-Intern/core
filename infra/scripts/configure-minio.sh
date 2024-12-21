@@ -1,0 +1,15 @@
+#!/bin/bash
+
+configure_minio() {
+  docker exec -e "MINIO_ACCESS_KEY=$MINIO_ACCESS_KEY" -e "MINIO_SECRET_KEY=$MINIO_SECRET_KEY" "$MINIO_INSTANCE" mc \
+  alias set "$MINIO_SERVER_ALIAS" "$MINIO_ENDPOINT" "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+  docker exec "$MINIO_INSTANCE" mc admin config set "$MINIO_SERVER_ALIAS" notify_amqp:"$RABBIT_INSTANCE" \
+  enable="$MINIO_NOTIFY_AMQP_ENABLE" url="$MINIO_NOTIFY_AMQP_URL" exchange="$MINIO_NOTIFY_AMQP_EXCHANGE" \
+  exchange_type="$MINIO_NOTIFY_AMQP_EXCHANGE_TYPE" routing_key="$MINIO_NOTIFY_AMQP_ROUTING_KEY" \
+  mandatory="$MINIO_NOTIFY_AMQP_MANDATORY" durable="$MINIO_NOTIFY_AMQP_DURABLE" \
+  auto_deleted="$MINIO_NOTIFY_AMQP_AUTO_DELETED"
+  docker exec "$MINIO_INSTANCE" mc mb "$MINIO_SERVER_ALIAS"/"$MINIO_INCOMING_BUCKET"
+  docker restart "$MINIO_INSTANCE"
+  sleep 5
+  docker exec "$MINIO_INSTANCE" mc event add "$MINIO_SERVER_ALIAS"/"$MINIO_INCOMING_BUCKET" "$MINIO_NOTIFY_AMQP_ARN" --event put
+}
