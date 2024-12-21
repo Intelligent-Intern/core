@@ -6,7 +6,7 @@ app/python/core
 venv
 .env.local
 response.json
-
+var/
 
 app/php/symfony/.env.local
 app/php/symfony/.env.local.php
