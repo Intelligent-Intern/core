@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  {{ inventory_hostname }}:
+    image: "{{ docker_image }}"
+    container_name: "{{ inventory_hostname }}"
+    restart: always
+    networks:
+      - default
+    environment:
+      - VAULT_ADDR={{ lookup('env', 'VAULT_ADDR') }}
+      - DB_HOST={{ lookup('vault', 'secret/{{ environment }}/db/creds', 'db_host') }}
+      - DB_PORT={{ lookup('vault', 'secret/{{ environment }}/db/creds', 'db_port') }}
+      - DB_USER={{ lookup('vault', 'secret/{{ environment }}/db/creds', 'db_user') }}
+      - DB_PASSWORD={{ lookup('vault', 'secret/{{ environment }}/db/creds', 'db_password') }}
+    volumes:
+      - "{{ volumes }}"
+    ports:
+      - "{{ ports }}"
+
+networks:
+  default:
+    external:
+      name: "{{ network_name }}"

@@ -1,0 +1,4 @@
+config:
+  intelligent-intern-infra:domain: intelligent-intern.com
+  intelligent-intern-infra:serverType: cpx21
+  intelligent-intern-infra:location: fsn1

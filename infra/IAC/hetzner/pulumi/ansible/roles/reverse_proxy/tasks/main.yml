@@ -1,0 +1,34 @@
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Start and enable Nginx
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Copy Nginx site configuration
+  template:
+    src: nginx_site.j2
+    dest: /etc/nginx/sites-available/{{ inventory_hostname }}
+    mode: "0644"
+
+- name: Enable Nginx site
+  file:
+    src: /etc/nginx/sites-available/{{ inventory_hostname }}
+    dest: /etc/nginx/sites-enabled/{{ inventory_hostname }}
+    state: link
+
+- name: Test Nginx configuration
+  command: nginx -t
+  register: nginx_test
+  changed_when: false
+
+- name: Restart Nginx
+  service:
+    name: nginx
+    state: restarted
+  when: nginx_test is succeeded

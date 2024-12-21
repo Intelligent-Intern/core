@@ -1,0 +1,3 @@
+name: intelligent-intern-infra
+runtime: go
+description: Infrastructure as Code for intelligent-intern.com using Pulumi and Hetzner Cloud.

@@ -1,0 +1,5 @@
+- name: Setup Infrastructure
+  hosts: localhost
+  tasks:
+    - name: Provision Hetzner Servers
+      command: pulumi up --yes

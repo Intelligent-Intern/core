@@ -1,0 +1,25 @@
+---
+# pulumi/ansible/roles/docker/tasks/main.yml
+- name: Ensure Docker is installed
+  apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+
+- name: Start and enable Docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Create Docker network
+  docker_network:
+    name: "{{ network_name }}"
+    state: present
+
+- name: Deploy Docker containers using docker-compose
+  docker_compose:
+    project_src: "{{ compose_file_dir }}"
+    restarted: yes
+    build: yes
+    state: present
