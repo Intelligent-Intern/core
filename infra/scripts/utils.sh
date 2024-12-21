@@ -157,12 +157,15 @@ setup_env_local() {
 }
 
 init_system() {
-    [[ -d ./var/rabbitmq/data/mnesia ]] && rm -rf ./var/rabbitmq/data/mnesia 2>/dev/null
+
+    [[ -d ./var/rabbitmq ]] && [[ -d ./var/rabbitmq/data/mnesia ]] && rm -rf ./var/rabbitmq/data/mnesia 2>/dev/null
     [[ -f ./var/rabbitmq/data/.erlang.cookie ]] && rm ./var/rabbitmq/data/.erlang.cookie 2>/dev/null
     [[ -f ./config/.env.vault ]] && rm ./config/.env.vault 2>/dev/null
     [[ -d ./var/vault ]] && rm -rf ./var/vault 2>/dev/null
     docker compose down --volumes
     docker volume prune -f
+    sleep 1
+
     docker stop vault 2>/dev/null && docker rm -f vault 2>/dev/null
     docker stop minio 2>/dev/null && docker rm -f minio 2>/dev/null
     docker stop db 2>/dev/null && docker rm -f db 2>/dev/null
@@ -176,6 +179,7 @@ init_system() {
     docker stop redis 2>/dev/null && docker rm -f redis 2>/dev/null
     docker stop n8n 2>/dev/null && docker rm -f redis 2>/dev/null
     docker stop redis-commander 2>/dev/null && docker rm -f redis_commander 2>/dev/null
+    echo ''
 }
 
 # we need to make sure not to have post conflicts with other projects you work on
@@ -218,7 +222,7 @@ stop_all_docker_containers() {
     docker stop neo4j 2>/dev/null && docker rm -f neo4j 2>/dev/null
     docker stop mailcatcher 2>/dev/null && docker rm -f mailcatcher 2>/dev/null
     docker stop python_demo 2>/dev/null && docker rm -f python_demo 2>/dev/null
-
+    echo ''
 }
 
 check_and_install_mkcert() {

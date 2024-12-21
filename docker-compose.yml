@@ -53,13 +53,13 @@ services:
       - "5020:5000"
     volumes:
       - type: bind
-        source: ./app/python/python_demo/src
+        source: ./app/python/python-demo/src
         target: /app
       - type: bind
-        source: ./app/python/python_demo/tests
+        source: ./app/python/python-demo/tests
         target: /tests
       - type: bind
-        source: ./var/python_demo
+        source: ./var/python-demo
         target: /var
     profiles:
       - python_demo

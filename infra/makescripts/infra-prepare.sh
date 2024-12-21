@@ -48,9 +48,16 @@ set +a
 main() {
   # be careful here:
   # run_reset
-
   VAULT_SECRET_ID=empty
   VAULT_ROLE_ID=empty
+  mkdir -p "./var/rabbitmq/data" \
+    "./var/traefik/certificates" \
+    "./var/grafana" \
+    "./var/vault/data/sys" \
+    "./var/vault/log" \
+    "./var/neo4j/data" \
+    "./var/postgres/data" \
+    "./var/neo4j/logs"
   init_system
   # while we are developing the build script we always delete this... normally the build script is only run once anyways
   # after that we should use the make up command
