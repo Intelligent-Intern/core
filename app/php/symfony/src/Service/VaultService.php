@@ -24,6 +24,13 @@ class VaultService
         $this->secretId = $_ENV['VAULT_SECRET_ID'] ?? throw new \RuntimeException('VAULT_SECRET_ID is not set');
     }
 
+    /**
+     * @throws TransportExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws ClientExceptionInterface
+     */
     public function getPostgresCredentials(): string
     {
         $secret = $this->fetchSecret('secret/data/data/postgres');
