@@ -1,7 +1,6 @@
 #!/bin/bash
 
 add_local_developer_policies_to_vault() {
-
   docker exec -it vault sh -c "cat /vault/config/pypi-policy.hcl | VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault policy write pypi-policy -"
   docker exec -it vault sh -c "cat /vault/config/docker-policy.hcl | VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault policy write docker-policy -"
   docker exec -it vault sh -c "cat /vault/config/rabbitmq-policy.hcl | VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault policy write rabbitmq-policy -"
@@ -9,13 +8,26 @@ add_local_developer_policies_to_vault() {
   docker exec -it vault sh -c "cat /vault/config/minio-policy.hcl | VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault policy write minio-policy -"
   docker exec -it vault sh -c "cat /vault/config/redis-policy.hcl | VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault policy write redis-policy -"
   docker exec -it vault sh -c "cat /vault/config/env-policy.hcl | VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault policy write env-policy -"
+  docker exec -it vault sh -c "cat /vault/config/loki-policy.hcl | VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault policy write loki-policy -"
+  docker exec -it vault sh -c "cat /vault/config/logging-policy.hcl | VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault policy write logging-policy -"
 
   docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault auth enable approle"
   docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault write auth/approle/role/local_developer token_policies=\"local_developer_policy\" token_ttl=1h token_max_ttl=1h"
-  docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault write auth/approle/role/local_developer token_policies=\"local_developer_policy,pypi-policy,docker-policy,rabbitmq-policy,postgres-policy,minio-policy,redis-policy,env-policy\""
+  docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault write auth/approle/role/local_developer token_policies=\"local_developer_policy,pypi-policy,docker-policy,rabbitmq-policy,postgres-policy,minio-policy,redis-policy,env-policy,loki-policy,logging-policy\""
 }
 
 create_local_developer_policies() {
+cat <<EOF > ./infra/vault/config/loki-policy.hcl
+path "secret/data/data/loki" {
+  capabilities = ["read"]
+}
+EOF
+
+cat <<EOF > ./infra/vault/config/logging-policy.hcl
+path "secret/data/data/logging" {
+  capabilities = ["read"]
+}
+EOF
 
 cat <<EOF > ./infra/vault/config/policy.hcl
 path "auth/approle/role/local_developer/role-id" {
@@ -77,6 +89,8 @@ add_secrets_to_vault() {
   docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/minio minio_access_key=\"$MINIO_ACCESS_KEY\" minio_secret_key=\"$MINIO_SECRET_KEY\" minio_endpoint=\"$MINIO_ENDPOINT\" incoming_bucket=\"$MINIO_INCOMING_BUCKET\" minio_use_local_storage=\"$MINIO_USE_LOCAL_STORAGE\" logs_info_bucket=\"$MINIO_LOGS_INFO_BUCKET\" logs_error_bucket=\"$MINIO_LOGS_ERROR_BUCKET\" logs_warning_bucket=\"$MINIO_LOGS_WARNING_BUCKET\""
   docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/redis redis_host=\"$REDIS_HOST\" redis_port=\"$REDIS_PORT\" redis_password=\"$REDIS_PASSWORD\" redis_db=\"$REDIS_DB\""
   docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/env workflow_init_path=\"$WORKFLOW_INIT_PATH\" docker_registry=\"$DOCKER_REGISTRY\" pypi_repository=\"$PYPI_REPOSITORY\" log_level=\"$LOG_LEVEL\" log_file_limit=\"$LOG_FILE_LIMIT\" log_backup_count=\"$LOG_BACKUP_COUNT\" log_separation=\"$LOG_SEPARATION\" test_data_directory=\"$TEST_DATA_DIRECTORY\" storage_directory=\"$STORAGE_DIRECTORY\""
+  docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/loki url=\"http://loki:3100/loki/api/v1/push\""
+  docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/logging target=\"loki\" level=\"debug\""
 }
 
 configure_vault() {

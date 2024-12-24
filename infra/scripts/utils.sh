@@ -445,6 +445,7 @@ start_containers_and_run_scripts() {
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile mercure --env-file .env.local up --build -d
     message "Starting the application" 0 6
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile python_demo --env-file .env.local up --build -d
+    sleep 5
     message "Starting keycloak" 0 6
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile keycloak --env-file .env.local up --build -d
     message "Starting the symfony api" 0 6

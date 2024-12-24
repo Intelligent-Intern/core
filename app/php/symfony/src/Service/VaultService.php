@@ -38,7 +38,6 @@ class VaultService
             'pgsql://%s:%s@%s:%s/%s',
             $secret['username'], $secret['password'], $secret['host'], $secret['port'], $secret['database']
         );
-
     }
 
     /**
@@ -48,7 +47,30 @@ class VaultService
      * @throws DecodingExceptionInterface
      * @throws ClientExceptionInterface
      */
-    private function fetchSecret(string $path): array
+    public function getLokiConfig(): array
+    {
+        return $this->fetchSecret('secret/data/data/loki');
+    }
+    /**
+     * @throws TransportExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws ClientExceptionInterface
+     */
+    public function getLoggerConfig(): array
+    {
+        return $this->fetchSecret('secret/data/data/logger');
+    }
+
+    /**
+     * @throws TransportExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws ClientExceptionInterface
+     */
+    public function fetchSecret(string $path): array
     {
         $response = $this->httpClient->request('GET', "{$this->vaultUrl}/v1/{$path}", [
             'headers' => ['X-Vault-Token' => $this->authenticate()],
@@ -80,5 +102,4 @@ class VaultService
 
         return $token;
     }
-
 }

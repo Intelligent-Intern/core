@@ -11,6 +11,13 @@ services:
         arguments:
             $httpClient: '@Symfony\Contracts\HttpClient\HttpClientInterface'
 
+    App\Factory\LoggerFactory:
+        arguments:
+            $vaultService: '@App\Service\VaultService'
+
+    Psr\Log\LoggerInterface:
+        factory: ['@App\Factory\LoggerFactory', 'createLogger']
+
     Symfony\Contracts\HttpClient\HttpClientInterface: '@http_client'
 
     App\:
