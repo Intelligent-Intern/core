@@ -3,13 +3,21 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'pdf_processor'
+  - job_name: 'python_demo'
     metrics_path: /metrics
     static_configs:
-      - targets: ['pdf_processor:5020']
+      - targets: ['python_demo:5020']
 
   - job_name: 'postgres'
     scrape_interval: 15s
     metrics_path: /metrics
     static_configs:
       - targets: ['postgres_exporter:9187']
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8088']

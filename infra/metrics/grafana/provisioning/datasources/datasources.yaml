@@ -14,3 +14,12 @@ datasources:
     url: http://loki:3100
     jsonData:
       maxLines: 1000
+
+  - name: Postgres Exporter
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    jsonData:
+      httpMethod: GET
+    metricFindQuery: |
+      label_values(pg_up)

@@ -12,3 +12,8 @@ prometheus-flask-exporter
 prometheus_client
 pytest
 Werkzeug
+flask
+boto3
+pika
+PyMuPDF
+Pillow

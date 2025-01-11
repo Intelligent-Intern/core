@@ -82,3 +82,18 @@ ensure_symfony_container() {
         echo "symfony container image exists."
     fi
 }
+
+build_postgres_container() {
+    cd ./infra/db/postgres || exit 1
+    message "Building PostgreSQL container with pgvector" 0 6
+    sudo -u"$LOCAL_USER" docker build -t registry.kreuzung1.de/intelligent-intern/postgres:latest .
+    sudo -u"$LOCAL_USER" docker push registry.kreuzung1.de/intelligent-intern/postgres:latest
+    cd ../../../ || exit 1
+}
+ensure_postgres_container() {
+    if ! docker image inspect registry.kreuzung1.de/intelligent-intern/postgres:latest > /dev/null 2>&1; then
+        build_postgres_container
+    else
+        echo "PostgreSQL container image with pgvector exists."
+    fi
+}

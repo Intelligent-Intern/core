@@ -59,6 +59,7 @@ main() {
     "./var/postgres/data" \
     "./var/neo4j/logs" \
     "./var/python-demo" \
+    "./var/pdf-split-service" \
     "./infra/keycloak"
 
   init_system
@@ -112,6 +113,8 @@ main() {
   fi
   ensure_docker_login
   ensure_pypi_private_repo_login
+  ensure_nodejs_app_container
+  ensure_postgres_container
   create_pypi_env
   echo "Starting containers..."
   start_containers_and_run_scripts

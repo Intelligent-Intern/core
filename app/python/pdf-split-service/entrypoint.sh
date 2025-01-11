@@ -42,8 +42,7 @@ extra-index-url = $PIP_EXTRA_INDEX_URL
 EOL
 chown -R appuser:appuser /home/appuser/.pip
 
-python3.12 -m pip install --upgrade pip
+pip install --upgrade pip
 pip install -r /app/requirements.txt
 
 exec flask run --host=0.0.0.0 --port=5000
-# python /app/app.py

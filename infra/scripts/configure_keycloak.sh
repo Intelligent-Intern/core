@@ -5,7 +5,7 @@ configure_keycloak() {
   error_exit() {
     message "Error: $1" 9 15; exit 1;
   }
-  sleep 10
+  sleep 15
   message "Authenticating with Keycloak..." 17 15
   TOKEN=$(curl -s -X POST "${KEYCLOAK_URL}/realms/master/protocol/openid-connect/token" \
     -d "grant_type=password" \

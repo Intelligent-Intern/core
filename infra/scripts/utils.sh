@@ -81,6 +81,7 @@ rabbitmq_ready() {
     nc -z rabbitmq.local 5672
     return $?
 }
+
 wait_for_rabbitmq() {
     echo "Waiting for RabbitMQ to become responsive..."
     until rabbitmq_ready; do
@@ -178,7 +179,9 @@ init_system() {
     docker stop grafana 2>/dev/null && docker rm -f grafana 2>/dev/null
     docker stop redis 2>/dev/null && docker rm -f redis 2>/dev/null
     docker stop n8n 2>/dev/null && docker rm -f redis 2>/dev/null
-    docker stop redis-commander 2>/dev/null && docker rm -f redis_commander 2>/dev/null
+    docker stop redis-commander 2>/dev/null && docker rm -f redis-commander 2>/dev/null
+    docker stop cadvisor 2>/dev/null && docker rm -f cadvisor 2>/dev/null
+
     echo ''
 }
 
@@ -222,6 +225,11 @@ stop_all_docker_containers() {
     docker stop neo4j 2>/dev/null && docker rm -f neo4j 2>/dev/null
     docker stop mailcatcher 2>/dev/null && docker rm -f mailcatcher 2>/dev/null
     docker stop python_demo 2>/dev/null && docker rm -f python_demo 2>/dev/null
+    docker stop pdf_split_service 2>/dev/null && docker rm -f pdf_split_service 2>/dev/null
+    docker stop n8n_setup 2>/dev/null && docker rm -f n8n_setup 2>/dev/null
+    docker stop redis-commander 2>/dev/null && docker rm -f redis-commander 2>/dev/null
+    docker stop cadvisor 2>/dev/null && docker rm -f cadvisor 2>/dev/null
+
     echo ''
 }
 
@@ -277,11 +285,13 @@ update_hosts_file() {
         "127.0.0.1 traefik.local"
         "10.30.10.101 python_demo"
         "127.0.0.1 python-demo.local"
+        "10.30.10.101 pdf_split_service"
+        "127.0.0.1 pdf-split-service.local"
         "10.30.10.102 symfony"
         "127.0.0.1 symfony.local"
         "10.30.10.103 neo4j"
-        "10.30.10.103 neo4j.local"
-        "10.30.10.103 neo4j-bolt.local"
+        "127.0.0.1 neo4j.local"
+        "127.0.0.1 neo4j-bolt.local"
         "10.30.10.104 db"
         "10.30.10.105 pgadmin"
         "127.0.0.1 pgadmin.local"
@@ -308,7 +318,9 @@ update_hosts_file() {
         "127.0.0.1 n8n.local"
         "10.30.10.118 mailcatcher"
         "127.0.0.1 mailcatcher.local"
-        "10.30.10.119 keycloak.local keycloak"
+        "10.30.10.119 keycloak"
+        "127.0.0.1 keycloak.local"
+        "127.0.0.1 cadvisor.local"
     )
     for entry in "${entries[@]}"; do
         if ! grep -qF "$entry" /etc/hosts; then
@@ -331,6 +343,7 @@ show_tools() {
   echo "https://rabbitmq.local - message broker - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER} - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}"
   echo "https://prometheus.local - metrics exporter"
   echo "https://grafana.local - monitoring - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER} - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}"
+  echo "https://cadvisor.local - even more monitoring"
   echo "https://n8n.local - automation tool"
   echo "https://keycloak.local - keycloak instance - ${KEYCLOAK_ADMIN_USER} / ${KEYCLOAK_ADMIN_PASSWORD}"
   echo "https://symfony.local - Symfony API platform with graphQL"
@@ -432,8 +445,8 @@ start_containers_and_run_scripts() {
     done
     message "Starting redis-commander"
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile cache-ui --env-file .env.local up --build -d
-    message "Starting n8n"
-    sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n --env-file .env.local up --build -d
+    message "Starting n8n and n8n_setup"
+    sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n --profile n8n_setup --env-file .env.local up --build -d
     sudo chmod -R 777 ./var/n8n
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n --env-file .env.local stop
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n --env-file .env.local up -d
@@ -445,11 +458,16 @@ start_containers_and_run_scripts() {
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile mercure --env-file .env.local up --build -d
     message "Starting the application" 0 6
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile python_demo --env-file .env.local up --build -d
+    message "Starting the pdf_split_service" 0 6
+    sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile pdf_split_service --env-file .env.local up --build -d
     sleep 5
     message "Starting keycloak" 0 6
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile keycloak --env-file .env.local up --build -d
     message "Starting the symfony api" 0 6
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile symfony --env-file .env.local up --build -d
+    sleep 5
+    message "configure n8n" 0 6
+    sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n_setup --env-file .env.local up --build -d
 }
 
 start_containers() {
@@ -486,6 +504,8 @@ start_containers() {
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile mercure --env-file .env.local up --build -d
     message "Starting the application" 0 6
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile python_demo --env-file .env.local up --build -d
+    message "Starting the pdf_split_service" 0 6
+    sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile pdf_split_service --env-file .env.local up --build -d
     message "Starting keycloak" 0 6
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile keycloak --env-file .env.local up --build -d
     message "Starting the symfony api" 0 6
