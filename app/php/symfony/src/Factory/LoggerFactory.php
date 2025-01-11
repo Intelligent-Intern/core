@@ -4,6 +4,7 @@ namespace App\Factory;
 
 use App\Service\LokiLoggerService;
 use App\Service\VaultService;
+use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Psr\Log\LoggerInterface;
@@ -37,7 +38,7 @@ class LoggerFactory
         if ($logTarget === 'loki') {
             $logger->pushHandler(new LokiLoggerService($this->vaultService));
         } else {
-            $logger->pushHandler(new StreamHandler('php://stdout', Logger::DEBUG));
+            $logger->pushHandler(new StreamHandler('php://stdout', Level::Debug));
         }
 
         return $logger;

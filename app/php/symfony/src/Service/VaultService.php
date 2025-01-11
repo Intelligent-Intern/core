@@ -31,62 +31,6 @@ class VaultService
      * @throws DecodingExceptionInterface
      * @throws ClientExceptionInterface
      */
-    public function getPostgresCredentials(): string
-    {
-        $secret = $this->fetchSecret('secret/data/data/postgres');
-        return sprintf(
-            'pgsql://%s:%s@%s:%s/%s',
-            $secret['username'], $secret['password'], $secret['host'], $secret['port'], $secret['database']
-        );
-    }
-
-    /**
-     * @throws TransportExceptionInterface
-     * @throws ServerExceptionInterface
-     * @throws RedirectionExceptionInterface
-     * @throws DecodingExceptionInterface
-     * @throws ClientExceptionInterface
-     */
-    public function getLokiConfig(): array
-    {
-        return $this->fetchSecret('secret/data/data/loki');
-    }
-    /**
-     * @throws TransportExceptionInterface
-     * @throws ServerExceptionInterface
-     * @throws RedirectionExceptionInterface
-     * @throws DecodingExceptionInterface
-     * @throws ClientExceptionInterface
-     */
-    public function getLoggerConfig(): array
-    {
-        return $this->fetchSecret('secret/data/data/logger');
-    }
-
-    /**
-     * @throws TransportExceptionInterface
-     * @throws ServerExceptionInterface
-     * @throws RedirectionExceptionInterface
-     * @throws DecodingExceptionInterface
-     * @throws ClientExceptionInterface
-     */
-    public function fetchSecret(string $path): array
-    {
-        $response = $this->httpClient->request('GET', "{$this->vaultUrl}/v1/{$path}", [
-            'headers' => ['X-Vault-Token' => $this->authenticate()],
-        ]);
-        $data = $response->toArray();
-
-        return $data['data']['data'] ?? throw new \RuntimeException("Secret {$path} not found.");
-    }
-
-    /**
-     * @throws TransportExceptionInterface
-     * @throws ServerExceptionInterface
-     * @throws RedirectionExceptionInterface
-     * @throws DecodingExceptionInterface
-     * @throws ClientExceptionInterface
-     */
     private function authenticate(): string
     {
         $response = $this->httpClient->request('POST', "{$this->vaultUrl}/v1/auth/approle/login", [
@@ -101,5 +45,49 @@ class VaultService
         }
 
         return $token;
+    }
+
+    /**
+     * @return array
+     * @throws TransportExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws ClientExceptionInterface
+     */
+    public function fetchAllSecrets(): array
+    {
+        $token = $this->authenticate();
+        $response = $this->httpClient->request('GET', "{$this->vaultUrl}/v1/secret/metadata?list=true", [
+            'headers' => ['X-Vault-Token' => $token],
+        ]);
+        $data = $response->toArray();
+        $keys = $data['data']['keys'] ?? throw new \RuntimeException('No keys found in Vault.');
+        $allSecrets = [];
+        foreach ($keys as $key) {
+            $secretData = $this->fetchSecret("secret/data/{$key}", $token);
+            $allSecrets = array_merge($allSecrets, $secretData);
+        }
+
+        return $allSecrets;
+    }
+
+    /**
+     * @param string $path
+     * @param string $token
+     * @return array
+     * @throws TransportExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws ClientExceptionInterface
+     */
+    public function fetchSecret(string $path, string $token): array
+    {
+        $response = $this->httpClient->request('GET', "{$this->vaultUrl}/v1/{$path}", [
+            'headers' => ['X-Vault-Token' => $token],
+        ]);
+        $data = $response->toArray();
+        return $data['data']['data'] ?? throw new \RuntimeException("Secret {$path} not found.");
     }
 }

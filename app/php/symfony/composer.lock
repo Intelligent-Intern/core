@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "981357f66c74ea3bc5260c14299370ce",
+    "content-hash": "fd01143f7f4160701dc36421429383c7",
     "packages": [
         {
             "name": "doctrine/cache",
@@ -1554,6 +1554,48 @@
                 }
             ],
             "time": "2024-07-18T11:15:46+00:00"
+        },
+        {
+            "name": "intelligent-intern/openai-bundle",
+            "version": "v2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Intelligent-Intern/openai-bundle.git",
+                "reference": "6c2cc4d5bd852c0feb0e6311c539c54ea809c70b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Intelligent-Intern/openai-bundle/zipball/6c2cc4d5bd852c0feb0e6311c539c54ea809c70b",
+                "reference": "6c2cc4d5bd852c0feb0e6311c539c54ea809c70b",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2",
+                "symfony/dependency-injection": "7.2.*",
+                "symfony/framework-bundle": "7.2.*",
+                "symfony/http-client": "7.2.*"
+            },
+            "type": "symfony-bundle",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "2.0-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "IntelligentIntern\\OpenAIBundle\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Symfony bundle for OpenAI integration",
+            "support": {
+                "issues": "https://github.com/Intelligent-Intern/openai-bundle/issues",
+                "source": "https://github.com/Intelligent-Intern/openai-bundle/tree/v2.0.0"
+            },
+            "time": "2025-01-11T03:35:01+00:00"
         },
         {
             "name": "monolog/monolog",
