@@ -9,18 +9,14 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class LogTestController extends AbstractController
 {
-    private LoggerInterface $logger;
-
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
+    public function __construct(
+        private readonly LoggerInterface $logger
+    ) {}
 
     #[Route('/log_test', name: 'log_test')]
     public function logTest(): JsonResponse
     {
         try {
-            // Beispiel-Fehler erzeugen
             throw new \Exception('Test Exception for Stacktrace');
         } catch (\Exception $e) {
             $this->logger->error('This is a test error log.', ['exception' => $e]);

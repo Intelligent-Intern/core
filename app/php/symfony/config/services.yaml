@@ -1,5 +1,3 @@
-# This file is the entry point to configure your own services.
-# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
 
 services:
@@ -11,12 +9,22 @@ services:
         arguments:
             $httpClient: '@Symfony\Contracts\HttpClient\HttpClientInterface'
 
-    App\Factory\LoggerFactory:
+    App\Factory\LogServiceFactory:
         arguments:
             $vaultService: '@App\Service\VaultService'
 
+    App\Factory\AIServiceFactory:
+        arguments:
+            $vaultService: '@App\Service\VaultService'
+            $logger: '@Psr\Log\LoggerInterface'
+
+    App\Factory\GraphDBServiceFactory:
+        arguments:
+            $vaultService: '@App\Service\VaultService'
+            $logger: '@Psr\Log\LoggerInterface'
+
     Psr\Log\LoggerInterface:
-        factory: ['@App\Factory\LoggerFactory', 'createLogger']
+        factory: ['@App\Factory\LogServiceFactory', 'create']
 
     Symfony\Contracts\HttpClient\HttpClientInterface: '@http_client'
 
