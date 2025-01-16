@@ -445,8 +445,8 @@ start_containers_and_run_scripts() {
     done
     message "Starting redis-commander"
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile cache-ui --env-file .env.local up --build -d
-    message "Starting n8n and n8n_setup"
-    sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n --profile n8n_setup --env-file .env.local up --build -d
+    message "Starting n8n"
+    sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n --env-file .env.local up --build -d
     sudo chmod -R 777 ./var/n8n
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n --env-file .env.local stop
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n --env-file .env.local up -d
@@ -465,9 +465,9 @@ start_containers_and_run_scripts() {
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile keycloak --env-file .env.local up --build -d
     message "Starting the symfony api" 0 6
     sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile symfony --env-file .env.local up --build -d
-    sleep 5
-    message "configure n8n" 0 6
-    sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n_setup --env-file .env.local up --build -d
+    #sleep 5
+    #message "configure n8n" 0 6
+    #sudo -u"$LOCAL_USER" VAULT_URL="$VAULT_URL" VAULT_ROLE_ID="$VAULT_ROLE_ID" VAULT_SECRET_ID="$VAULT_SECRET_ID" docker compose --profile n8n_setup --env-file .env.local up --build -d
 }
 
 start_containers() {

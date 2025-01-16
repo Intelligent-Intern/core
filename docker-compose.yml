@@ -550,74 +550,74 @@ services:
       - "traefik.http.routers.vault.tls=true"
       - "traefik.http.services.vault.loadbalancer.server.port=8300"
 
-#  n8n:
-#    container_name: n8n
-#    hostname: n8n
-#    image: n8nio/n8n
-#    restart: unless-stopped
-#    networks:
-#      fullstack:
-#        ipv4_address: 10.30.10.117
-#    env_file:
-#      - .env.local
-#    environment:
-#      - DB_TYPE=${N8N_DB_TYPE}
-#      - DB_POSTGRESDB_HOST=${N8N_DB_HOST}
-#      - DB_POSTGRESDB_PORT=${N8N_DB_PORT}
-#      - DB_POSTGRESDB_DATABASE=${N8N_DB_NAME}
-#      - DB_POSTGRESDB_USER=${N8N_DB_USER}
-#      - DB_POSTGRESDB_PASSWORD=${N8N_DB_PASSWORD}
-#      - N8N_RABBITMQ_HOST=${N8N_RABBITMQ_HOST}
-#      - N8N_RABBITMQ_USER=${N8N_RABBITMQ_USER}
-#      - N8N_RABBITMQ_PASSWORD=${N8N_RABBITMQ_PASSWORD}
-#      - N8N_RABBITMQ_VHOST=${N8N_RABBITMQ_VHOST}
-#      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
-#      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-#      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-#      - MINIO_USE_SSL=${MINIO_USE_SSL}
-#      - N8N_IMPORT_EXPORT_MODE=import
-#      - N8N_WORKFLOWS_PATH=/data/workflows
-#      - N8N_SECURE_COOKIE=false
-#    ports:
-#      - "5678:5678"
-#    volumes:
-#      - ./var/n8n/data:/home/node/.n8n
-#      - ./infra/n8n/workflows:/data/workflows
-#      - ~/.local/share/mkcert/rootCA.pem:/usr/local/share/ca-certificates/rootCA.pem
-#    profiles:
-#      - n8n
-#    init: true
-#    labels:
-#      - "traefik.enable=true"
-#      - "traefik.http.routers.n8n.rule=Host(`n8n.local`)"
-#      - "traefik.http.routers.n8n.entrypoints=websecure"
-#      - "traefik.http.routers.n8n.tls=true"
-#      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
-#
-#  n8n_setup:
-#    container_name: n8n_setup
-#    hostname: n8n_setup
-#    image: registry.kreuzung1.de/intelligent-intern/nodejs-app:latest
-#    restart: always
-#    networks:
-#      fullstack:
-#        ipv4_address: 10.30.10.150
-#    env_file:
-#      - .env.local
-#    environment:
-#      - N8N_USER_EMAIL=${N8N_USER_EMAIL}
-#      - N8N_USER_PASSWORD=${N8N_USER_PASSWORD}
-#      - N8N_USER_FIRSTNAME=${N8N_USER_FIRSTNAME}
-#      - N8N_USER_LASTNAME=${N8N_USER_LASTNAME}
-#      - N8N_URL=${N8N_URL}
-#      - LOKI_URL=${LOKI_URL}
-#    volumes:
-#      - ./infra/n8n/setup:/app/setup:rw
-#      - ./var/n8n:/var/n8n:rw
-#    profiles:
-#      - n8n_setup
-#    init: true
-#    command: ["node", "/app/setup/setup-n8n.js"]
+  n8n:
+    container_name: n8n
+    hostname: n8n
+    image: n8nio/n8n
+    restart: unless-stopped
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.117
+    env_file:
+      - .env.local
+    environment:
+      - DB_TYPE=${N8N_DB_TYPE}
+      - DB_POSTGRESDB_HOST=${N8N_DB_HOST}
+      - DB_POSTGRESDB_PORT=${N8N_DB_PORT}
+      - DB_POSTGRESDB_DATABASE=${N8N_DB_NAME}
+      - DB_POSTGRESDB_USER=${N8N_DB_USER}
+      - DB_POSTGRESDB_PASSWORD=${N8N_DB_PASSWORD}
+      - N8N_RABBITMQ_HOST=${N8N_RABBITMQ_HOST}
+      - N8N_RABBITMQ_USER=${N8N_RABBITMQ_USER}
+      - N8N_RABBITMQ_PASSWORD=${N8N_RABBITMQ_PASSWORD}
+      - N8N_RABBITMQ_VHOST=${N8N_RABBITMQ_VHOST}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_USE_SSL=${MINIO_USE_SSL}
+      - N8N_IMPORT_EXPORT_MODE=import
+      - N8N_WORKFLOWS_PATH=/data/workflows
+      - N8N_SECURE_COOKIE=false
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./var/n8n/data:/home/node/.n8n
+      - ./infra/n8n/workflows:/data/workflows
+      - ~/.local/share/mkcert/rootCA.pem:/usr/local/share/ca-certificates/rootCA.pem
+    profiles:
+      - n8n
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.local`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls=true"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+
+  n8n_setup:
+    container_name: n8n_setup
+    hostname: n8n_setup
+    image: registry.kreuzung1.de/intelligent-intern/nodejs-app:latest
+    restart: always
+    networks:
+      fullstack:
+        ipv4_address: 10.30.10.150
+    env_file:
+      - .env.local
+    environment:
+      - N8N_USER_EMAIL=${N8N_USER_EMAIL}
+      - N8N_USER_PASSWORD=${N8N_USER_PASSWORD}
+      - N8N_USER_FIRSTNAME=${N8N_USER_FIRSTNAME}
+      - N8N_USER_LASTNAME=${N8N_USER_LASTNAME}
+      - N8N_URL=${N8N_URL}
+      - LOKI_URL=${LOKI_URL}
+    volumes:
+      - ./infra/n8n/setup:/app/setup:rw
+      - ./var/n8n:/var/n8n:rw
+    profiles:
+      - n8n_setup
+    init: true
+    command: ["node", "/app/setup/setup-n8n.js"]
 
   mailcatcher:
     container_name: mailcatcher

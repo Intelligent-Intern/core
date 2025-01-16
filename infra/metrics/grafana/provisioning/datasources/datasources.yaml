@@ -5,6 +5,7 @@ datasources:
     access: proxy
     url: http://prometheus:9090
     isDefault: true
+    uid: prometheus_uid
     jsonData:
       httpMethod: GET
 
@@ -12,6 +13,7 @@ datasources:
     type: loki
     access: proxy
     url: http://loki:3100
+    uid: loki_uid
     jsonData:
       maxLines: 1000
 
@@ -19,6 +21,7 @@ datasources:
     type: prometheus
     access: proxy
     url: http://prometheus:9090
+    uid: postgres_exporter_uid
     jsonData:
       httpMethod: GET
     metricFindQuery: |

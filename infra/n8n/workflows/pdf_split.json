@@ -1,0 +1,81 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "queue": "IncomingQueue",
+        "options": {}
+      },
+      "id": "8ae9f166-7188-4a84-b0c3-eefb0f4dd841",
+      "name": "RabbitMQ Trigger",
+      "type": "n8n-nodes-base.rabbitmqTrigger",
+      "typeVersion": 1,
+      "position": [
+        820,
+        380
+      ],
+      "credentials": {
+        "rabbitmq": {
+          "id": "mIzyaxKG9aZnuh0N",
+          "name": "RabbitMQ account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://10.30.10.201:5000/process_pdf",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": {{ $json.content }}\n}",
+        "options": {}
+      },
+      "id": "d1cf2cab-4c5f-4dd7-b969-568607264965",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        380
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "RabbitMQ Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7b05e128-7ddf-4e9c-92f8-3b8e09e0478f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "93fd1dccdf9c43d44fa8e2de7b0ca96a0186eba097336ed3e6d66d2afa23716e"
+  },
+  "id": "OwBzXkQYWX3PnJBk",
+  "tags": []
+}

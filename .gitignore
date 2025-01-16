@@ -16,3 +16,5 @@ app/php/symfony/config/secrets/prod/prod.decrypt.private.php
 app/php/symfony/public/bundles/
 app/php/symfony/var/
 app/php/symfony/vendor/
+
+infra/n8n/setup/node_modules/

@@ -125,7 +125,7 @@ EOF
 
 add_secrets_to_vault() {
   docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/logging log_type=\"$LOG_TYPE\" log_level=\"$LOG_LEVEL\" log_file_limit=\"$LOG_FILE_LIMIT\" log_backup_count=\"$LOG_BACKUP_COUNT\" log_separation=\"$LOG_SEPARATION\""
-  docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/loki url=\"$LOKI_URL\" tenant=\"$LOKI_TENANT\" username=\"$LOKI_USERNAME\" password=\"$LOKI_PASSWORD\" log_level=\"$LOKI_LOG_LEVEL\""
+  docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/loki url=\"$LOKI_URL\" username=\"$LOKI_USERNAME\" password=\"$LOKI_PASSWORD\" log_level=\"$LOKI_LOG_LEVEL\""
   docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/openai provider=\"$OPENAI_PROVIDER\" model=\"$OPENAI_MODEL\" api_key=\"$OPENAI_API_KEY\" max_tokens=\"$OPENAI_MAX_TOKENS\" temperature=\"$OPENAI_TEMPERATURE\""
   docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/azure_openai provider=\"$AZURE_OPENAI_PROVIDER\" model=\"$AZURE_OPENAI_MODEL\" api_key=\"$AZURE_OPENAI_API_KEY\" endpoint=\"$AZURE_OPENAI_ENDPOINT\" deployment_id=\"$AZURE_OPENAI_DEPLOYMENT_ID\" max_tokens=\"$AZURE_OPENAI_MAX_TOKENS\" temperature=\"$AZURE_OPENAI_TEMPERATURE\""
   docker exec -it vault sh -c "VAULT_ADDR=$VAULT_ADDR VAULT_TOKEN=$VAULT_TOKEN vault kv put secret/data/file filepath=\"$FILE_LOG_PATH\" log_level=\"$FILE_LOG_LEVEL\""
